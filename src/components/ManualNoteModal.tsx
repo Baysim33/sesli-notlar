@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { PenLine, X, Loader2, Check } from 'lucide-react';
 import { supabase, type NoteCategory } from '@/lib/supabase';
 import ReminderField from './ReminderField';
+import VoiceRecorder from './VoiceRecorder';
+import SpeechToText from './SpeechToText';
 
 interface ManualNoteModalProps {
   onClose: () => void;
@@ -13,7 +15,12 @@ export default function ManualNoteModal({ onClose, onSaved }: ManualNoteModalPro
   const [content, setContent] = useState('');
   const [category, setCategory] = useState<NoteCategory>('Genel');
   const [remindAt, setRemindAt] = useState<string | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const handleTranscript = useCallback((text: string) => {
+    setContent((prev) => (prev ? prev + ' ' + text : text));
+  }, []);
 
   const handleSave = async () => {
     if (!title.trim() || !content.trim()) return;
@@ -23,7 +30,8 @@ export default function ManualNoteModal({ onClose, onSaved }: ManualNoteModalPro
       content: content.trim(),
       category,
       remind_at: remindAt,
-      source: 'manual',
+      audio_url: audioUrl,
+      source: audioUrl ? 'voice' : 'manual',
     });
     setSaving(false);
     if (!error) {
@@ -65,12 +73,15 @@ export default function ManualNoteModal({ onClose, onSaved }: ManualNoteModalPro
             />
           </div>
           <div>
-            <label className="text-neutral-400 text-xs font-medium mb-1.5 block">İçerik</label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-neutral-400 text-xs font-medium">İçerik</label>
+              <SpeechToText onTranscript={handleTranscript} accentColor="emerald" />
+            </div>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={5}
-              placeholder="Notunu buraya yaz..."
+              placeholder="Notunu buraya yaz veya sesli dikte et..."
               className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-3.5 py-2.5 text-neutral-100 text-sm placeholder:text-neutral-600 focus:outline-none focus:border-emerald-500/50 transition-colors resize-none"
             />
           </div>
@@ -92,6 +103,7 @@ export default function ManualNoteModal({ onClose, onSaved }: ManualNoteModalPro
               ))}
             </div>
           </div>
+          <VoiceRecorder value={audioUrl} onChange={setAudioUrl} accentColor="emerald" />
           <ReminderField value={remindAt} onChange={setRemindAt} accentColor="emerald" />
           <button
             onClick={handleSave}

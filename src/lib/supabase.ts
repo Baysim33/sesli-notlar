@@ -18,14 +18,10 @@ export interface Note {
   content: string;
   category: NoteCategory;
   image_url: string | null;
-  image?: string | null;
+  audio_url: string | null;
   source: NoteSource;
   remind_at: string | null;
   created_at: string;
-
-  // YENİ
-  audio_url?: string | null;       // Base64 data URL ("data:audio/webm;base64,...")
-  audio_duration?: number | null;  // saniye
 }
 
 export const CATEGORIES: NoteCategory[] = ['Ders', 'Teknik', 'Görevler', 'Genel'];

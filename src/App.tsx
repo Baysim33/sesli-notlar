@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Search, Camera, Mic, PenLine, NotebookPen, Loader2, Inbox, X,
-  ChevronLeft, Bell, BookOpen, Code, CheckSquare, FileText,
+  ChevronLeft, Bell, BookOpen, Code, CheckSquare, FileText, AudioLines,
 } from 'lucide-react';
 import {
   supabase, CATEGORIES, CATEGORY_COLORS, CATEGORY_META,
@@ -10,6 +10,7 @@ import {
 import NoteCard from '@/components/NoteCard';
 import PhotoModal from '@/components/PhotoModal';
 import VoiceModal from '@/components/VoiceModal';
+import DictationModal from '@/components/DictationModal';
 import ManualNoteModal from '@/components/ManualNoteModal';
 import EditModal from '@/components/EditModal';
 import ReminderPopup from '@/components/ReminderPopup';
@@ -32,6 +33,7 @@ export default function App() {
   const [search, setSearch] = useState('');
   const [showPhoto, setShowPhoto] = useState(false);
   const [showVoice, setShowVoice] = useState(false);
+  const [showDictation, setShowDictation] = useState(false);
   const [showManual, setShowManual] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
 
@@ -314,29 +316,37 @@ export default function App() {
       <div className="fixed bottom-0 inset-x-0 z-40 pb-safe">
         <div className="bg-gradient-to-t from-neutral-950 via-neutral-950/95 to-transparent pt-8 pb-4 px-4">
           <div className="mx-auto max-w-2xl">
-            <div className="flex gap-3 items-center">
+            <div className="flex gap-2 items-center">
               <button
                 onClick={() => setShowPhoto(true)}
-                className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-blue-500 text-white hover:bg-blue-600 active:scale-[0.98] transition-all text-sm font-semibold shadow-lg shadow-blue-500/20"
+                className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-2xl bg-blue-500 text-white hover:bg-blue-600 active:scale-[0.98] transition-all text-xs font-semibold shadow-lg shadow-blue-500/20"
               >
                 <Camera size={20} />
-                <span className="hidden xs:inline">Fotoğraf Ekle</span>
+                <span className="hidden xs:inline">Fotoğraf</span>
                 <span className="xs:hidden">Foto</span>
               </button>
               <button
                 onClick={() => setShowVoice(true)}
-                className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-amber-500 text-neutral-900 hover:bg-amber-400 active:scale-[0.98] transition-all text-sm font-bold shadow-lg shadow-amber-500/20"
+                className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-2xl bg-amber-500 text-neutral-900 hover:bg-amber-400 active:scale-[0.98] transition-all text-xs font-bold shadow-lg shadow-amber-500/20"
               >
                 <Mic size={20} />
-                <span className="hidden xs:inline">Sesli Not</span>
+                <span className="hidden xs:inline">Ses Kaydı</span>
                 <span className="xs:hidden">Ses</span>
               </button>
               <button
+                onClick={() => setShowDictation(true)}
+                className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-2xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-[0.98] transition-all text-xs font-semibold shadow-lg shadow-emerald-500/20"
+              >
+                <AudioLines size={20} />
+                <span className="hidden xs:inline">Dikte</span>
+                <span className="xs:hidden">Dikte</span>
+              </button>
+              <button
                 onClick={() => setShowManual(true)}
-                className="w-14 h-[52px] shrink-0 flex items-center justify-center rounded-2xl bg-neutral-800 text-neutral-300 hover:bg-neutral-700 active:scale-[0.98] transition-all border border-neutral-700"
+                className="w-12 h-[50px] shrink-0 flex items-center justify-center rounded-2xl bg-neutral-800 text-neutral-300 hover:bg-neutral-700 active:scale-[0.98] transition-all border border-neutral-700"
                 aria-label="El ile not ekle"
               >
-                <PenLine size={20} />
+                <PenLine size={18} />
               </button>
             </div>
           </div>
@@ -345,7 +355,8 @@ export default function App() {
 
       {/* Modals */}
       {showPhoto && <PhotoModal onClose={() => setShowPhoto(false)} onSaved={fetchNotes} />}
-{showVoice && <VoiceModal onClose={() => setShowVoice(false)} onSaved={fetchNotes} />}
+      {showVoice && <VoiceModal onClose={() => setShowVoice(false)} onSaved={fetchNotes} />}
+      {showDictation && <DictationModal onClose={() => setShowDictation(false)} onSaved={fetchNotes} />}
       {showManual && <ManualNoteModal onClose={() => setShowManual(false)} onSaved={fetchNotes} />}
       {editingNote && (
         <EditModal

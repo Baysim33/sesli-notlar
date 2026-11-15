@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { PenLine, X, Loader2, Check } from 'lucide-react';
 import { supabase, type Note, type NoteCategory } from '@/lib/supabase';
 import ReminderField from './ReminderField';
+import VoiceRecorder from './VoiceRecorder';
+import SpeechToText from './SpeechToText';
 
 interface EditModalProps {
   note: Note;
@@ -14,7 +16,12 @@ export default function EditModal({ note, onClose, onSaved }: EditModalProps) {
   const [content, setContent] = useState(note.content);
   const [category, setCategory] = useState<NoteCategory>(note.category);
   const [remindAt, setRemindAt] = useState<string | null>(note.remind_at);
+  const [audioUrl, setAudioUrl] = useState<string | null>(note.audio_url);
   const [saving, setSaving] = useState(false);
+
+  const handleTranscript = useCallback((text: string) => {
+    setContent((prev) => (prev ? prev + ' ' + text : text));
+  }, []);
 
   const handleSave = async () => {
     if (!title.trim() || !content.trim()) return;
@@ -26,6 +33,7 @@ export default function EditModal({ note, onClose, onSaved }: EditModalProps) {
         content: content.trim(),
         category,
         remind_at: remindAt,
+        audio_url: audioUrl,
       })
       .eq('id', note.id);
     setSaving(false);
@@ -67,7 +75,10 @@ export default function EditModal({ note, onClose, onSaved }: EditModalProps) {
             />
           </div>
           <div>
-            <label className="text-neutral-400 text-xs font-medium mb-1.5 block">İçerik</label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-neutral-400 text-xs font-medium">İçerik</label>
+              <SpeechToText onTranscript={handleTranscript} accentColor="neutral" />
+            </div>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
@@ -93,6 +104,7 @@ export default function EditModal({ note, onClose, onSaved }: EditModalProps) {
               ))}
             </div>
           </div>
+          <VoiceRecorder value={audioUrl} onChange={setAudioUrl} accentColor="neutral" />
           <ReminderField value={remindAt} onChange={setRemindAt} accentColor="emerald" />
           <button
             onClick={handleSave}

@@ -115,7 +115,8 @@ Projeyi kendi bilgisayarınızda çalıştırmak için:
 2. Sol menüden **SQL Editor** sekmesine gidin.
 3. `supabase/migrations/20261114175612_create_notes_table.sql` dosyasının içeriğini yapıştırıp **Run** butonuna basın.
 4. `supabase/migrations/20261114180755_add_remind_at_column.sql` dosyasının içeriğini yapıştırıp **Run** butonuna basın.
-5. **Project Settings > API** bölümünden URL ve `anon` `public` anahtarınızı kopyalayıp `.env` dosyanıza veya Vercel panelinize ekleyin.
+5. `supabase/migrations/20261115150025_add_audio_url_column.sql` dosyasının içeriğini yapıştırıp **Run** butonuna basın.
+6. **Project Settings > API** bölümünden URL ve `anon` `public` anahtarınızı kopyalayıp `.env` dosyanıza veya Vercel panelinize ekleyin.
 
 ---
 

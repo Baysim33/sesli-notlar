@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
-import { Trash2, ImageIcon, Mic, PenLine, Check, Bell, Pencil, ImageOff, X, Maximize2, Play, Pause, Volume2 } from 'lucide-react';
+import { useState } from 'react';
+import { Trash2, ImageIcon, Mic, PenLine, Check, Bell, Pencil, ImageOff, Volume2, ZoomIn } from 'lucide-react';
 import { CATEGORY_COLORS, SOURCE_LABELS, formatReminder, type Note } from '@/lib/supabase';
 import { supabase } from '@/lib/supabase';
+import Lightbox from './Lightbox';
 
 interface NoteCardProps {
   note: Note;
@@ -33,77 +34,11 @@ function formatDate(iso: string): string {
 export default function NoteCard({ note, onDelete, onEdit }: NoteCardProps) {
   const [confirming, setConfirming] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const [audioCurrentTime, setAudioCurrentTime] = useState(0);
-  const [audioCardDuration, setAudioCardDuration] = useState(0);
-  const audioCardRef = useRef<HTMLAudioElement | null>(null);
-
+  const [showLightbox, setShowLightbox] = useState(false);
   const colors = CATEGORY_COLORS[note.category];
   const hasReminder = !!note.remind_at;
   const reminderText = hasReminder ? formatReminder(note.remind_at!) : '';
   const isOverdue = hasReminder && new Date(note.remind_at!).getTime() < Date.now();
-
-  const isAudioNote =
-    note.source === 'voice' &&
-    !!note.image_url &&
-    (note.image_url.startsWith('data:audio') ||
-      note.image_url.includes('audio') ||
-      note.image_url.endsWith('.webm') ||
-      note.image_url.endsWith('.mp3') ||
-      note.image_url.endsWith('.ogg'));
-
-  const extractDuration = (text: string): number => {
-    const match = text?.match(/\((\d+):(\d+)\)/);
-    if (match) {
-      return parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
-    }
-    return 0;
-  };
-
-  const effectiveDuration =
-    isFinite(audioCardDuration) && !isNaN(audioCardDuration) && audioCardDuration > 0
-      ? audioCardDuration
-      : extractDuration(note.content);
-
-  const formatAudioTime = (sec: number) => {
-    if (!isFinite(sec) || isNaN(sec) || sec < 0) return '00:00';
-    const m = Math.floor(sec / 60);
-    const s = Math.floor(sec % 60);
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
-
-  const toggleCardAudio = async () => {
-    if (!audioCardRef.current) return;
-    try {
-      if (isPlayingAudio) {
-        audioCardRef.current.pause();
-        setIsPlayingAudio(false);
-      } else {
-        if (
-          audioCardRef.current.ended ||
-          (effectiveDuration > 0 && audioCurrentTime >= effectiveDuration)
-        ) {
-          audioCardRef.current.currentTime = 0;
-          setAudioCurrentTime(0);
-        }
-        await audioCardRef.current.play();
-        setIsPlayingAudio(true);
-      }
-    } catch (err) {
-      console.error('Audio play failed:', err);
-      setIsPlayingAudio(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!previewOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setPreviewOpen(false);
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [previewOpen]);
 
   const handleDelete = async () => {
     const { error } = await supabase.from('notes').delete().eq('id', note.id);
@@ -134,105 +69,22 @@ export default function NoteCard({ note, onDelete, onEdit }: NoteCardProps) {
           <p className="text-neutral-400 text-sm leading-relaxed line-clamp-3">
             {note.content}
           </p>
-          {/* Audio Player for Voice Notes */}
-          {isAudioNote && note.image_url && (
-            <div className="mt-3 rounded-xl bg-neutral-800/80 border border-neutral-700/80 p-3 flex flex-col gap-2">
-              <audio
-                ref={audioCardRef}
-                src={note.image_url}
-                preload="metadata"
-                onTimeUpdate={() => {
-                  if (audioCardRef.current) setAudioCurrentTime(audioCardRef.current.currentTime);
-                }}
-                onLoadedMetadata={() => {
-                  if (audioCardRef.current) {
-                    const d = audioCardRef.current.duration;
-                    if (isFinite(d) && !isNaN(d) && d > 0) {
-                      setAudioCardDuration(d);
-                    } else {
-                      // WebM Chromium duration fix: seek to end then reset
-                      const el = audioCardRef.current;
-                      el.currentTime = 1e101;
-                      el.ontimeupdate = () => {
-                        el.ontimeupdate = null;
-                        const computed = el.duration;
-                        el.currentTime = 0;
-                        if (isFinite(computed) && !isNaN(computed) && computed > 0) {
-                          setAudioCardDuration(computed);
-                        } else {
-                          setAudioCardDuration(extractDuration(note.content));
-                        }
-                      };
-                    }
-                  }
-                }}
-                onEnded={() => {
-                  setIsPlayingAudio(false);
-                  setAudioCurrentTime(0);
-                }}
-                onPause={() => setIsPlayingAudio(false)}
-              />
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={toggleCardAudio}
-                  className="w-9 h-9 rounded-full bg-amber-500 text-neutral-900 flex items-center justify-center hover:bg-amber-400 transition-colors shadow-md shadow-amber-500/20 shrink-0"
-                  aria-label={isPlayingAudio ? 'Durdur' : 'Oynat'}
-                >
-                  {isPlayingAudio ? (
-                    <Pause size={15} fill="currentColor" />
-                  ) : (
-                    <Play size={15} fill="currentColor" className="ml-0.5" />
-                  )}
-                </button>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="font-medium text-amber-400 flex items-center gap-1">
-                      <Volume2 size={13} />
-                      Ses Kaydı
-                    </span>
-                    <span className="font-mono text-[11px] text-neutral-400">
-                      {formatAudioTime(audioCurrentTime)} / {formatAudioTime(effectiveDuration)}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={effectiveDuration > 0 ? effectiveDuration : 1}
-                    step={0.1}
-                    value={audioCurrentTime}
-                    onChange={(e) => {
-                      const t = Number(e.target.value);
-                      setAudioCurrentTime(t);
-                      if (audioCardRef.current) audioCardRef.current.currentTime = t;
-                    }}
-                    className="w-full accent-amber-500 h-1.5 bg-neutral-700 rounded-lg cursor-pointer"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Photo Preview for Photo Notes */}
-          {!isAudioNote && note.image_url && !imgError && (
-            <div
-              className="mt-3 relative group/img rounded-lg overflow-hidden border border-neutral-800 cursor-pointer"
-              onClick={() => setPreviewOpen(true)}
-            >
+          {note.image_url && !imgError && (
+            <div className="mt-3 rounded-lg overflow-hidden border border-neutral-800 relative group/img cursor-pointer" onClick={() => setShowLightbox(true)}>
               <img
                 src={note.image_url}
                 alt={note.title}
-                className="w-full h-40 object-cover group-hover/img:scale-[1.02] transition-transform duration-200"
+                className="w-full h-40 object-cover transition-transform duration-300 group-hover/img:scale-105"
                 onError={() => setImgError(true)}
               />
-              <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-                <div className="bg-neutral-900/80 backdrop-blur-sm px-2.5 py-1.5 rounded-lg border border-neutral-700 text-neutral-200 text-xs flex items-center gap-1.5 font-medium shadow-lg">
-                  <Maximize2 size={13} />
-                  Büyüt
+              <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/30 transition-all duration-300 flex items-center justify-center">
+                <div className="opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <ZoomIn size={20} className="text-white" />
                 </div>
               </div>
             </div>
           )}
-          {!isAudioNote && note.image_url && imgError && (
+          {note.image_url && imgError && (
             <div className="mt-3 rounded-lg border border-neutral-800 bg-neutral-800/50 flex items-center gap-2 p-3 text-neutral-500 text-xs">
               <ImageOff size={16} className="text-neutral-600" />
               Fotoğraf yüklenemedi
@@ -274,6 +126,15 @@ export default function NoteCard({ note, onDelete, onEdit }: NoteCardProps) {
           </button>
         </div>
       </div>
+
+      {/* Audio player */}
+      {note.audio_url && (
+        <div className="mt-3 flex items-center gap-2 rounded-xl bg-neutral-800/50 border border-neutral-700/50 px-3 py-2">
+          <Volume2 size={16} className="text-neutral-400 shrink-0" />
+          <audio controls src={note.audio_url} className="w-full h-8" />
+        </div>
+      )}
+
       {confirming && (
         <div className="mt-2 flex items-center gap-2 text-xs">
           <span className="text-neutral-400">Silinsin mi?</span>
@@ -292,36 +153,8 @@ export default function NoteCard({ note, onDelete, onEdit }: NoteCardProps) {
         </div>
       )}
 
-      {/* Görsel Büyütme Modalı (Lightbox) */}
-      {previewOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-200"
-          onClick={() => setPreviewOpen(false)}
-        >
-          <div
-            className="relative max-w-4xl w-full flex flex-col items-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="w-full flex items-center justify-between pb-3 px-1 text-neutral-300">
-              <span className="text-sm font-semibold truncate pr-4 text-neutral-200">{note.title}</span>
-              <button
-                onClick={() => setPreviewOpen(false)}
-                className="p-1.5 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white transition-colors border border-neutral-700"
-                aria-label="Kapat"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="relative rounded-2xl overflow-hidden border border-neutral-800 shadow-2xl bg-neutral-950 flex items-center justify-center max-h-[82vh] w-full">
-              <img
-                src={note.image_url || note.image || ''}
-                alt={note.title}
-                className="max-h-[82vh] w-auto max-w-full object-contain"
-              />
-            </div>
-          </div>
-        </div>
+      {showLightbox && note.image_url && (
+        <Lightbox src={note.image_url} alt={note.title} onClose={() => setShowLightbox(false)} />
       )}
     </div>
   );

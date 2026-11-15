@@ -23,7 +23,7 @@ export default function ReminderField({ value, onChange, accentColor = 'blue' }:
           <Bell size={16} className={c.icon} />
           <input
             type="datetime-local"
-            lang="tr" value={toDateTimeLocal(value)}
+            value={toDateTimeLocal(value)}
             onChange={(e) => onChange(fromDateTimeLocal(e.target.value))}
             className={`flex-1 bg-transparent text-neutral-100 text-sm focus:outline-none ${c.border}`}
           />
