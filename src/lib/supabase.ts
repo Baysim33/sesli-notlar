@@ -22,6 +22,29 @@ export interface Note {
   source: NoteSource;
   remind_at: string | null;
   created_at: string;
+  user_id?: string | null;
+}
+
+const USER_ID_KEY = 'akil_defteri_user_id';
+
+export function getUserId(): string {
+  if (typeof window === 'undefined') return 'anon_user';
+  let userId = localStorage.getItem(USER_ID_KEY);
+  if (!userId) {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      userId = crypto.randomUUID();
+    } else {
+      userId = 'usr_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
+    }
+    localStorage.setItem(USER_ID_KEY, userId);
+  }
+  return userId;
+}
+
+export function setUserId(newId: string): void {
+  if (typeof window !== 'undefined' && newId.trim()) {
+    localStorage.setItem(USER_ID_KEY, newId.trim());
+  }
 }
 
 export const CATEGORIES: NoteCategory[] = ['Ders', 'Teknik', 'Görevler', 'Genel'];

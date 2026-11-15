@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { Camera, Upload, X, Loader2, Sparkles, Check, Image as ImageIcon } from 'lucide-react';
-import { supabase, type NoteCategory } from '@/lib/supabase';
+import { supabase, type NoteCategory, getUserId } from '@/lib/supabase';
 import ReminderField from './ReminderField';
 
 interface PhotoModalProps {
@@ -102,6 +102,7 @@ export default function PhotoModal({ onClose, onSaved }: PhotoModalProps) {
       image_url: previewUrl,
       remind_at: editingRemindAt,
       source: 'photo',
+      user_id: getUserId(),
     });
     setSaving(false);
     if (!error) {

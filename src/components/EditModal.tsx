@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { PenLine, X, Loader2, Check } from 'lucide-react';
-import { supabase, type Note, type NoteCategory } from '@/lib/supabase';
+import { supabase, type Note, type NoteCategory, getUserId } from '@/lib/supabase';
 import ReminderField from './ReminderField';
 import VoiceRecorder from './VoiceRecorder';
 import SpeechToText from './SpeechToText';
@@ -35,7 +35,8 @@ export default function EditModal({ note, onClose, onSaved }: EditModalProps) {
         remind_at: remindAt,
         audio_url: audioUrl,
       })
-      .eq('id', note.id);
+      .eq('id', note.id)
+      .eq('user_id', getUserId());
     setSaving(false);
     if (!error) {
       onSaved();

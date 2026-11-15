@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Mic, X, Loader2, Check, Square, AlertCircle, AudioLines } from 'lucide-react';
-import { supabase, type NoteCategory } from '@/lib/supabase';
+import { supabase, type NoteCategory, getUserId } from '@/lib/supabase';
 import ReminderField from './ReminderField';
 
 interface DictationModalProps {
@@ -142,6 +142,7 @@ export default function DictationModal({ onClose, onSaved }: DictationModalProps
       category,
       remind_at: remindAt,
       source: 'manual',
+      user_id: getUserId(),
     });
     setSaving(false);
     if (!error) {

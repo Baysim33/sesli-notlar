@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { PenLine, X, Loader2, Check } from 'lucide-react';
-import { supabase, type NoteCategory } from '@/lib/supabase';
+import { supabase, type NoteCategory, getUserId } from '@/lib/supabase';
 import ReminderField from './ReminderField';
 import VoiceRecorder from './VoiceRecorder';
 import SpeechToText from './SpeechToText';
@@ -32,6 +32,7 @@ export default function ManualNoteModal({ onClose, onSaved }: ManualNoteModalPro
       remind_at: remindAt,
       audio_url: audioUrl,
       source: audioUrl ? 'voice' : 'manual',
+      user_id: getUserId(),
     });
     setSaving(false);
     if (!error) {

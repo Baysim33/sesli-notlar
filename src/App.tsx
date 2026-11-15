@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import {
   supabase, CATEGORIES, CATEGORY_COLORS, CATEGORY_META,
-  type Note, type NoteCategory,
+  type Note, type NoteCategory, getUserId,
 } from '@/lib/supabase';
 import NoteCard from '@/components/NoteCard';
 import PhotoModal from '@/components/PhotoModal';
@@ -40,12 +40,36 @@ export default function App() {
   const { activeReminders, dismissReminder, permission, requestPermission } = useReminders(notes);
 
   const fetchNotes = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('notes')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (!error && data) {
-      setNotes(data as Note[]);
+    try {
+      const userId = getUserId();
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        if (data.length === 0) {
+          const { data: legacyData } = await supabase
+            .from('notes')
+            .select('*')
+            .is('user_id', null)
+            .order('created_at', { ascending: false });
+
+          if (legacyData && legacyData.length > 0) {
+            await supabase
+              .from('notes')
+              .update({ user_id: userId })
+              .is('user_id', null);
+            setNotes(legacyData as Note[]);
+            setLoading(false);
+            return;
+          }
+        }
+        setNotes(data as Note[]);
+      }
+    } catch (err) {
+      console.warn('Notes fetch error:', err);
     }
     setLoading(false);
   }, []);
@@ -266,7 +290,10 @@ export default function App() {
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-lg font-bold tracking-tight text-neutral-100 truncate">{headerTitle}</h1>
-              <p className="text-xs text-neutral-500 truncate">{headerSubtitle}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-neutral-500 truncate">{headerSubtitle}</p>
+                <span className="inline-flex items-center text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.2 rounded-full font-medium">🔒 Kişisel</span>
+              </div>
             </div>
             {view === 'folders' && (
               <div className="shrink-0 text-right">

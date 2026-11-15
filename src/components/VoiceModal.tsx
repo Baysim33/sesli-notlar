@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Mic, X, Loader2, Check, Square, AudioLines, Volume2, Trash2 } from 'lucide-react';
-import { supabase, type NoteCategory } from '@/lib/supabase';
+import { supabase, type NoteCategory, getUserId } from '@/lib/supabase';
 import ReminderField from './ReminderField';
 
 interface VoiceModalProps {
@@ -117,6 +117,7 @@ export default function VoiceModal({ onClose, onSaved }: VoiceModalProps) {
       remind_at: remindAt,
       audio_url: audioUrl,
       source: 'voice',
+      user_id: getUserId(),
     });
     setSaving(false);
     if (!error) {

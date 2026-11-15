@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Trash2, ImageIcon, Mic, PenLine, Check, Bell, Pencil, ImageOff, Volume2, ZoomIn } from 'lucide-react';
-import { CATEGORY_COLORS, SOURCE_LABELS, formatReminder, type Note } from '@/lib/supabase';
+import { CATEGORY_COLORS, SOURCE_LABELS, formatReminder, type Note, getUserId } from '@/lib/supabase';
 import { supabase } from '@/lib/supabase';
 import Lightbox from './Lightbox';
 
@@ -41,7 +41,11 @@ export default function NoteCard({ note, onDelete, onEdit }: NoteCardProps) {
   const isOverdue = hasReminder && new Date(note.remind_at!).getTime() < Date.now();
 
   const handleDelete = async () => {
-    const { error } = await supabase.from('notes').delete().eq('id', note.id);
+    const { error } = await supabase
+      .from('notes')
+      .delete()
+      .eq('id', note.id)
+      .eq('user_id', getUserId());
     if (!error) {
       onDelete(note.id);
     }
